@@ -1,0 +1,10 @@
+music_bot.env
+blacklist
+false_positives
+api_jsons
+following
+time_tracker
+
+debug_log.txt
+
+app.py
