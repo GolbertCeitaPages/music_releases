@@ -21,4 +21,6 @@ for artist,id,follow in zip(list_of_all_artists,list_of_all_ids,list_of_all_foll
 
 df = pd.DataFrame(combined_list,columns=["artist","id","following"])
 
+df = df.drop_duplicates(subset=["artist", "id"])
+
 df.to_csv(Path("discord_bots") / "music_releases"  / "following" / "all_artist_data.csv",index=False)
