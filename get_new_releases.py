@@ -81,15 +81,15 @@ def get_albums_for_artists(artists, token):
 
             if resp.status_code == 429:
                 retry_after = int(resp.headers.get("Retry-After", 1))
-                print(f"Rate limited. Retrying after {retry_after} seconds...")
+                #print(f"Rate limited. Retrying after {retry_after} seconds...")
                 with open(log_path, "a", encoding="utf-8") as log:
                     log.write(f"\n[DEBUG] {datetime.now()} Rate limited. Retrying after {retry_after} seconds...\n")
                 time.sleep(retry_after)
                 resp = requests.get(url, headers=headers)
 
             if resp.status_code != 200:
-                print(f"Error fetching {artist}: HTTP {resp.status_code}")
-                print("Response text:", resp.text)
+                #print(f"Error fetching {artist}: HTTP {resp.status_code}")
+                #print("Response text:", resp.text)
                 with open(log_path, "a", encoding="utf-8") as log:
                     log.write(f"\n[DEBUG] {datetime.now()} Error fetching {artist}: HTTP {resp.status_code}\nResponse text: {resp.text}\n")
                 break
@@ -97,8 +97,8 @@ def get_albums_for_artists(artists, token):
             try:
                 data = resp.json()
             except requests.exceptions.JSONDecodeError:
-                print(f"Could not decode JSON for artist: {artist}")
-                print("Raw response:", resp.text)
+                #print(f"Could not decode JSON for artist: {artist}")
+                #print("Raw response:", resp.text)
                 with open(log_path, "a", encoding="utf-8") as log:
                     log.write(f"\n[DEBUG] {datetime.now()} Could not decode JSON for artist: {artist} \n")
                 break
@@ -132,7 +132,7 @@ def get_albums_for_artists(artists, token):
             # Check if there’s a next page
             url = data.get("next")
             throttle_requests()
-            print(f"processing {artist}")
+            #print(f"processing {artist}")
             with open(log_path, "a", encoding="utf-8") as log:
                 log.write(f"\n[DEBUG] {datetime.now()} Processing {artist}")
 
@@ -191,7 +191,7 @@ if datetime.strptime(runtime_csv["refresh_date"].max(), "%Y-%m-%d").date() < dat
 
     except FileNotFoundError:
         run_tracker = pd.DataFrame(updated_csv_list,columns=["tracked artist","album title","release date","type","artists","timestamp"])
-        print("no base file")
+        #print("no base file")
         with open(log_path, "a", encoding="utf-8") as log:
             log.write(f"[DEBUG] {datetime.now()} album_trail.csv not found. Created new file.\n")
 
@@ -206,7 +206,7 @@ if datetime.strptime(runtime_csv["refresh_date"].max(), "%Y-%m-%d").date() < dat
     
     @client.event
     async def on_ready():
-        print(f"Logged in as {client.user}")
+        #print(f"Logged in as {client.user}")
         channel = client.get_channel(DISCORD_CHANNEL_ID)
 
         for album_info in disc:
@@ -218,3 +218,5 @@ if datetime.strptime(runtime_csv["refresh_date"].max(), "%Y-%m-%d").date() < dat
 
     client.run(DISCORD_TOKEN)
     subprocess.run(["python", str(Path(__file__).resolve().parent / "refresh_script.py")])
+    with open(log_path, "a", encoding="utf-8") as log:
+        log.write(f"[DEBUG] {datetime.now()} Script has successfully finished")
