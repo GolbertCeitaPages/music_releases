@@ -1,0 +1,23 @@
+create table music_db.album_trail (
+	tracked_artist varchar(255),
+    album_name varchar(255),
+	all_artists varchar(255),
+    artist_ids varchar(255),
+    album_type varchar(255),
+    `type` varchar(255),
+    album_group varchar(255),
+    total_tracks int,
+    album_popularity int,
+    available_markets varchar(1000),
+    album_id varchar(255),
+	release_date date,
+    release_date_precision varchar(50),
+    track_retrieval_status tinyint,
+    big_image varchar(255),
+    medium_image varchar(255),
+    small_image varchar(255),
+    spotify_url varchar(255),
+    href varchar(255),
+    uri varchar(255),
+    `timestamp` datetime
+);
