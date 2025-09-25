@@ -33,12 +33,12 @@ def make_artist_csv(playlist_json_path,not_interested=[]):
     return df
 
 def remove_ignored_artists(artist_df):
-    ignored_artists_df = pd.read_csv(ignored_artists_folder / "ignored_artists.csv")
-    ignored_artists_list = ignored_artists_df["artist_name"].to_list()
+    ignored_artists_df = pd.read_excel(ignored_artists_folder / "ignored_artists.xlsx")
+    ignored_artists_list = ignored_artists_df["artist"].to_list()
 
-    filtered_df = artist_df[~artist_df["artist"].isin(ignored_artists_list)]
+    filtered_artist_df = artist_df[~artist_df["artist"].isin(ignored_artists_list)]
 
-    return filtered_df
+    return filtered_artist_df
 
 ignored_artists_folder = Path(__file__).resolve().parent / "ignored_artists"
 ignored_artists_folder.mkdir(parents=True, exist_ok=True)
@@ -61,5 +61,5 @@ for spotify_jsons in list_of_spotify_jsons:
 full_artist_df = pd.concat(list_of_dfs)
 full_artist_df = full_artist_df.drop_duplicates(subset=["artist_id"])
 
-fdf = remove_ignored_artists(full_artist_df)
-fdf.to_csv(aritst_folder / "all_artists.csv",index=False)
+full_artist_df = remove_ignored_artists(full_artist_df)
+full_artist_df.to_excel(aritst_folder / "all_artists.xlsx",index=False)

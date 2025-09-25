@@ -31,20 +31,16 @@ connection = mysql.connector.connect(
 cursor = connection.cursor()
 
 # All artist ids and debug file
-log_path = Path(__file__).resolve().parent / "debug_log_releases.txt"
-csv_path = Path(__file__).resolve().parent / "following" / "all_artists.csv"
+log_path = Path(__file__).resolve().parent / "debug_log_new_releases.txt"
+excel_path = Path(__file__).resolve().parent / "following" / "all_artists.xlsx"
 
 with open(log_path, "w", encoding="utf-8") as log:
-    log.write(f"[DEBUG] {datetime.now()} CSV path: {csv_path}\n")
-    log.write(f"[DEBUG] {datetime.now()} File exists: {csv_path.exists()}\n")
-
-    if csv_path.exists():
-        content_preview = csv_path.read_text(encoding="utf-8")[:300]
-        log.write(f"[DEBUG] {datetime.now()} File preview:\n{content_preview}\n")
+    log.write(f"[DEBUG] {datetime.now()} CSV path: {excel_path}\n")
+    log.write(f"[DEBUG] {datetime.now()} File exists: {excel_path.exists()}\n")
 
     try:
         # get the artist names and ids of artists that are tracked 
-        artists = pd.read_csv(csv_path)
+        artists = pd.read_excel(excel_path)
         log.write(f"[DEBUG] {datetime.now()} Type after read_csv: {type(artists)}\n")
         log.write(f"[DEBUG] {datetime.now()} Columns: {artists.columns.tolist()}\n")
         log.write(f"[DEBUG] {datetime.now()} Head:\n{artists.head().to_string()}\n")
@@ -79,11 +75,9 @@ def get_albums_for_artists(artists, token):
     list_for_album_trail = []
     id_validation_list = []
 
-    for artist, id, following in zip(artists['artist'], artists['id'], artists['following']):
-        if not following:
-            continue
+    for artist, artist_id in zip(artists['artist'], artists['artist_id']):
 
-        url = f"https://api.spotify.com/v1/artists/{id}/albums"
+        url = f"https://api.spotify.com/v1/artists/{artist_id}/albums"
         params = {
             "include_groups": "album,single",
             "limit": 30,

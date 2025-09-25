@@ -8,6 +8,7 @@ import os
 import json
 import requests
 from dotenv import load_dotenv
+from datetime import datetime
 
 load_dotenv(Path(__file__).resolve().parent / "music_bot.env")
 
@@ -22,52 +23,52 @@ SPOTIFY_ALL = json.loads(os.getenv("SPOTIFY_ALL_IDS", "[]"))
 jsons_folder = Path(__file__).resolve().parent / "api_jsons"
 jsons_folder.mkdir(parents=True, exist_ok=True)
 
+# add txt file for debugging/logging
+log_path = Path(__file__).resolve().parent / "debug_log_deezer_spotify_playlist.txt"
 
-def get_deezer_playlist(deezer_playlist_id, override=False):
-    if override:
-        print("overriden")
-        if deezer_response.status_code == 200:
-            return None
-        else:
-            print(f"Failed to fetch data because playlist is private: {deezer_response.status_code}")
-            return None
-    else:
-        # Fetch playlist metadata
-        url = f"https://api.deezer.com/playlist/{deezer_playlist_id}"
-        deezer_response = requests.get(url)
-        if deezer_response.status_code != 200:
-            print(f"Failed to fetch data: {deezer_response.status_code}")
-            return None
-        
-        playlist_data = deezer_response.json()
+def get_deezer_playlist(deezer_playlist_id):
+    # Fetch playlist metadata
+    url = f"https://api.deezer.com/playlist/{deezer_playlist_id}"
+    deezer_response = requests.get(url)
+    if deezer_response.status_code != 200:
+        with open(log_path, "a", encoding="utf-8") as log:
+            log.write(f"\n[DEBUG] {datetime.now()} Failed to fetch data from Deezer: {deezer_response.status_code}\n")
+        return None
+    
+    playlist_data = deezer_response.json()
 
-        # Check if playlist has tracks and a "tracks" key
-        if "tracks" not in playlist_data or "data" not in playlist_data["tracks"]:
-            print("No tracks found in the playlist.")
-            return playlist_data
-
-        tracks = playlist_data["tracks"]["data"]
-
-        # If 'next' exists, keep fetching tracks
-        next_url = playlist_data["tracks"].get("next")
-
-        while next_url:
-            next_response = requests.get(next_url)
-            if next_response.status_code != 200:
-                print(f"Failed to fetch next page: {next_response.status_code}")
-                break
-            
-            next_data = next_response.json()
-            tracks.extend(next_data.get("data", []))
-            next_url = next_data.get("next")
-
-        # Replace the original tracks data with the full list
-        playlist_data["tracks"]["data"] = tracks
-
-        with open(jsons_folder / f"{playlist_data['title'].lower()}-deezer-response.json", "w") as deezer_json_extraction:
-            json.dump(playlist_data, deezer_json_extraction, indent=2)
-
+    # Check if playlist has tracks and a "tracks" key
+    if "tracks" not in playlist_data or "data" not in playlist_data["tracks"]:
+        with open(log_path, "a", encoding="utf-8") as log:
+            log.write(f"\n[DEBUG] {datetime.now()} No tracks found in the Deezer playlist...\n")
         return playlist_data
+
+    tracks = playlist_data["tracks"]["data"]
+
+    # If 'next' exists, keep fetching tracks
+    next_url = playlist_data["tracks"].get("next")
+
+    while next_url:
+        next_response = requests.get(next_url)
+        if next_response.status_code != 200:
+            with open(log_path, "a", encoding="utf-8") as log:
+                log.write(f"\n[DEBUG] {datetime.now()} Failed to fetch next page: {next_response.status_code}\n")
+            break
+        
+        next_data = next_response.json()
+        tracks.extend(next_data.get("data", []))
+        next_url = next_data.get("next")
+
+    # Replace the original tracks data with the full list
+    playlist_data["tracks"]["data"] = tracks
+
+    with open(jsons_folder / f"{playlist_data['title'].lower()}-deezer-response.json", "w") as deezer_json_extraction:
+        json.dump(playlist_data, deezer_json_extraction, indent=2)
+
+    with open(log_path, "a", encoding="utf-8") as log:
+        log.write(f"\n[DEBUG] {datetime.now()} Retrieved playlist as {playlist_data['title'].lower()}-deezer-response.json\n")
+
+    return playlist_data
 
 def refresh_access_token():
     url = "https://accounts.spotify.com/api/token"
@@ -98,7 +99,8 @@ def get_spotify_playlist(spotify_playlist_id):
     spotify_response = requests.get(url, headers=headers)
     
     if spotify_response.status_code != 200:
-        print(f"Failed to fetch playlist data: {spotify_response.status_code}")
+        with open(log_path, "a", encoding="utf-8") as log:
+            log.write(f"\n[DEBUG] {datetime.now()} Failed to fetch Spotify playlist data: {spotify_response.status_code}\n")
         return None
     
     spotify_playlist_data = spotify_response.json()
@@ -113,7 +115,8 @@ def get_spotify_playlist(spotify_playlist_id):
         tracks_response = requests.get(tracks_url, headers=headers)
         
         if tracks_response.status_code != 200:
-            print(f"Failed to fetch tracks at offset {offset}: {tracks_response.status_code}")
+            with open(log_path, "a", encoding="utf-8") as log:
+                log.write(f"\n[DEBUG] {datetime.now()} Failed to fetch tracks at offset {offset}: {tracks_response.status_code}\n")
             break
         
         tracks_data = tracks_response.json()
@@ -129,11 +132,20 @@ def get_spotify_playlist(spotify_playlist_id):
     
     with open(jsons_folder / f"{spotify_playlist_data['name'].lower()}-spotify-response.json", "w") as spotify_json_extraction:
             json.dump(spotify_playlist_data, spotify_json_extraction, indent=2)
+
+    with open(log_path, "a", encoding="utf-8") as log:
+        log.write(f"\n[DEBUG] {datetime.now()} Retrieved playlist as {spotify_playlist_data['name'].lower()}-spotify-response.json\n")
     
     return spotify_playlist_data
 
+with open(log_path, "w", encoding="utf-8") as log:
+    log.write(f"[DEBUG] {datetime.now()} Start fetching Deezer playlists\n")
+
 for deezer_input_ids in DEEZER_ALL:
     get_deezer_playlist(deezer_input_ids)
+
+with open(log_path, "a", encoding="utf-8") as log:
+    log.write(f"\n[DEBUG] {datetime.now()} Start fetching Spotify playlists\n")
 
 for spotify_input_ids in SPOTIFY_ALL:
     get_spotify_playlist(spotify_input_ids)
