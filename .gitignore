@@ -1,5 +1,5 @@
 music_bot.env
-blacklist
+ignored_artists
 false_positives
 api_jsons
 following

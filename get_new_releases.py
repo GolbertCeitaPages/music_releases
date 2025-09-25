@@ -32,7 +32,7 @@ cursor = connection.cursor()
 
 # All artist ids and debug file
 log_path = Path(__file__).resolve().parent / "debug_log_releases.txt"
-csv_path = Path(__file__).resolve().parent / "following" / "all_artist_data.csv"
+csv_path = Path(__file__).resolve().parent / "following" / "all_artists.csv"
 
 with open(log_path, "w", encoding="utf-8") as log:
     log.write(f"[DEBUG] {datetime.now()} CSV path: {csv_path}\n")

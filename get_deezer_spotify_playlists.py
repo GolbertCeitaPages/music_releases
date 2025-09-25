@@ -9,28 +9,19 @@ import json
 import requests
 from dotenv import load_dotenv
 
-load_dotenv(dotenv_path=Path("discord_bots") / "music_releases" / "music_bot.env")
+load_dotenv(Path(__file__).resolve().parent / "music_bot.env")
 
 SPOTIFY_CLIENT_ID = os.getenv("SPOTIFY_CLIENT_ID")
 SPOTIFY_CLIENT_SECRET = os.getenv("SPOTIFY_CLIENT_SECRET")
 SPOTIFY_REFRESH_TOKEN = os.getenv("SPOTIFY_REFRESH_TOKEN")
 
-# Playlists
-# Deezer ids 
-DEEZER_WORKOUT_ID=os.getenv("DEEZER_WORKOUT_ID")
-DEEZER_CHH_ID=os.getenv("DEEZER_CHH_ID")
-DEEZER_DRILL_UK_RAP_ID=os.getenv("DEEZER_DRILL_UK_RAP_ID")
-DEEZER_KPOP_ID=os.getenv("DEEZER_KPOP_ID")
-DEEZER_EDM_ID=os.getenv("DEEZER_EDM_ID")
-DEEZER_LOFI_ID=os.getenv("DEEZER_LOFI_ID")
+# All ids 
+DEEZER_ALL = json.loads(os.getenv("DEEZER_ALL_IDS", "[]"))
+SPOTIFY_ALL = json.loads(os.getenv("SPOTIFY_ALL_IDS", "[]")) 
 
-# Spotify
-SPOTIFY_WORKOUT_ID=os.getenv("SPOTIFY_WORKOUT_ID")
-SPOTIFY_CHH_ID=os.getenv("SPOTIFY_CHH_ID")
-SPOTIFY_DRILL_UK_RAP_ID=os.getenv("SPOTIFY_DRILL_UK_RAP_ID")
-SPOTIFY_KPOP_ID=os.getenv("SPOTIFY_KPOP_ID")
-SPOTIFY_EDM_ID=os.getenv("SPOTIFY_EDM_ID")
-SPOTIFY_LOFI_ID=os.getenv("SPOTIFY_LOFI_ID")
+jsons_folder = Path(__file__).resolve().parent / "api_jsons"
+jsons_folder.mkdir(parents=True, exist_ok=True)
+
 
 def get_deezer_playlist(deezer_playlist_id, override=False):
     if override:
@@ -38,7 +29,7 @@ def get_deezer_playlist(deezer_playlist_id, override=False):
         if deezer_response.status_code == 200:
             return None
         else:
-            print(f"Failed to fetch data: {deezer_response.status_code}")
+            print(f"Failed to fetch data because playlist is private: {deezer_response.status_code}")
             return None
     else:
         # Fetch playlist metadata
@@ -52,12 +43,12 @@ def get_deezer_playlist(deezer_playlist_id, override=False):
 
         # Check if playlist has tracks and a "tracks" key
         if "tracks" not in playlist_data or "data" not in playlist_data["tracks"]:
-            print("No tracks found in the playlist response.")
+            print("No tracks found in the playlist.")
             return playlist_data
 
         tracks = playlist_data["tracks"]["data"]
 
-        # Pagination: if 'next' exists, keep fetching tracks
+        # If 'next' exists, keep fetching tracks
         next_url = playlist_data["tracks"].get("next")
 
         while next_url:
@@ -72,6 +63,9 @@ def get_deezer_playlist(deezer_playlist_id, override=False):
 
         # Replace the original tracks data with the full list
         playlist_data["tracks"]["data"] = tracks
+
+        with open(jsons_folder / f"{playlist_data['title'].lower()}-deezer-response.json", "w") as deezer_json_extraction:
+            json.dump(playlist_data, deezer_json_extraction, indent=2)
 
         return playlist_data
 
@@ -107,7 +101,7 @@ def get_spotify_playlist(spotify_playlist_id):
         print(f"Failed to fetch playlist data: {spotify_response.status_code}")
         return None
     
-    data = spotify_response.json()
+    spotify_playlist_data = spotify_response.json()
     
     # Paginate through all tracks
     tracks = []
@@ -131,37 +125,15 @@ def get_spotify_playlist(spotify_playlist_id):
         offset += limit
     
     # Replace the partial tracks data with the full list
-    data["tracks"]["items"] = tracks
+    spotify_playlist_data["tracks"]["items"] = tracks
     
-    return data
+    with open(jsons_folder / f"{spotify_playlist_data['name'].lower()}-spotify-response.json", "w") as spotify_json_extraction:
+            json.dump(spotify_playlist_data, spotify_json_extraction, indent=2)
+    
+    return spotify_playlist_data
 
-def execute_extraction(SPOTIFY_ID,DEEZER_ID,playlist_name=""):
-    if SPOTIFY_ID:
-        spotify_pl_data = get_spotify_playlist(SPOTIFY_ID)
-    if DEEZER_ID:
-        deezer_pl_data = get_deezer_playlist(DEEZER_ID,override=False)
+for deezer_input_ids in DEEZER_ALL:
+    get_deezer_playlist(deezer_input_ids)
 
-    # Write the deezer json object into a local json file
-    if DEEZER_ID and "error" in deezer_pl_data:
-        print("error message spotted. Playlist is most likely private. not overriding json")
-    elif DEEZER_ID and "error" not in deezer_pl_data:
-        with open(Path("discord_bots") / "music_releases" / "api_jsons" / f"{playlist_name}-deezer-response.json", "w") as deezer_kpop_json_extraction:
-            json.dump(deezer_pl_data, deezer_kpop_json_extraction, indent=2)
-        print(f"Deezer Json overridden. Saved as {playlist_name}-deezer-response.json")
-
-    # Write the spotify json object into a local json file
-    if SPOTIFY_ID:
-        with open(Path("discord_bots") / "music_releases" / "api_jsons" / f"{playlist_name}-spotify-response.json", "w") as spotify_kpop_json_extraction:
-            json.dump(spotify_pl_data, spotify_kpop_json_extraction, indent=2)
-        print(f"Spotify Json overriden. Saved as {playlist_name}-spotify-response.json")
-
-# Call the main function to get all playlists that are needed
-#execute_extraction(SPOTIFY_ID=SPOTIFY_KPOP_ID,DEEZER_ID=DEEZER_KPOP_ID,playlist_name="kpop")
-#execute_extraction(SPOTIFY_ID=SPOTIFY_WORKOUT_ID,DEEZER_ID=DEEZER_WORKOUT_ID,playlist_name="workout")
-#execute_extraction(DEEZER_ID=DEEZER_CHH_ID,playlist_name="chh",SPOTIFY_ID=SPOTIFY_CHH_ID)
-execute_extraction(DEEZER_ID=DEEZER_DRILL_UK_RAP_ID,playlist_name="drill_uk_rap",SPOTIFY_ID=SPOTIFY_DRILL_UK_RAP_ID)
-
-# Not checked yet. Will do so at a later time.
-#execute_extraction(SPOTIFY_ID=SPOTIFY_EDM_ID,DEEZER_ID=DEEZER_EDM_ID,playlist_name="edm")
-#execute_extraction(SPOTIFY_ID=SPOTIFY_LOFI_ID,DEEZER_ID=DEEZER_LOFI_ID,playlist_name="lofi")
-
+for spotify_input_ids in SPOTIFY_ALL:
+    get_spotify_playlist(spotify_input_ids)

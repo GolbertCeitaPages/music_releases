@@ -1,26 +1,65 @@
 ###############################################################################################################################################################################
-# Purpose: get all artist names and id's from the files so that one can be tracked
+# Purpose: get the artist and artist id from the spotify jsons
 ###############################################################################################################################################################################
 import pandas as pd 
 from pathlib import Path
+import json
+from datetime import datetime
 
-#for things in list_of_playlists:
-chh = pd.read_csv(Path("discord_bots") / "music_releases"  / "following" / "chh_artist_data.csv")
-drill_uk_rap = pd.read_csv(Path("discord_bots") / "music_releases"  / "following" / "drill_uk_rap_artist_data.csv")
-workout = pd.read_csv(Path("discord_bots") / "music_releases"  / "following" / "workout_artist_data.csv")
-kpop = pd.read_csv(Path("discord_bots") / "music_releases"  / "following" / "kpop_artist_data.csv")
+def make_artist_csv(playlist_json_path,not_interested=[]):
+    with open(playlist_json_path, "r") as spotify_json_extraction:
+        raw_spotify_data = json.load(spotify_json_extraction)
 
-list_of_all_artists = chh["artist"].to_list() + drill_uk_rap["artist"].to_list() + workout["artist"].to_list() + kpop["artist"].to_list()
-list_of_all_ids = chh["id"].to_list() + drill_uk_rap["id"].to_list() + workout["id"].to_list() + kpop["id"].to_list()
-list_of_all_followdata = chh["following"].to_list() + drill_uk_rap["following"].to_list() + workout["following"].to_list() + kpop["following"].to_list()
+    # get the playlist name to add as a column
+    playlist_name = playlist_json_path.name.split("-spotify-response.json")[0]
+    
+    spotify_tracks = raw_spotify_data["tracks"]["items"]
+    
+    artist_list = []
 
-combined_list = []
-for artist,id,follow in zip(list_of_all_artists,list_of_all_ids,list_of_all_followdata):
-    if artist not in combined_list:
-        combined_list.append((artist,id,follow))
+    for spotify_track in spotify_tracks:
+        track_info = spotify_track["track"]
+        
+        for artist in track_info["artists"]:
+            name = artist["name"]
+            artist_id = artist["id"]
+            
+            if name not in [a[0] for a in artist_list] and name not in not_interested:
+                artist_list.append([name, artist_id,playlist_name,datetime.now()])
 
-df = pd.DataFrame(combined_list,columns=["artist","id","following"])
+    df = pd.DataFrame(artist_list,columns=['artist','artist_id','playlist','timestamp'])
+    df = df.sort_values(by="artist", key=lambda col: col.str.lower(), ascending=True)
 
-df = df.drop_duplicates(subset=["artist", "id"])
+    return df
 
-df.to_csv(Path("discord_bots") / "music_releases"  / "following" / "all_artist_data.csv",index=False)
+def remove_ignored_artists(artist_df):
+    ignored_artists_df = pd.read_csv(ignored_artists_folder / "ignored_artists.csv")
+    ignored_artists_list = ignored_artists_df["artist_name"].to_list()
+
+    filtered_df = artist_df[~artist_df["artist"].isin(ignored_artists_list)]
+
+    return filtered_df
+
+ignored_artists_folder = Path(__file__).resolve().parent / "ignored_artists"
+ignored_artists_folder.mkdir(parents=True, exist_ok=True)
+
+# create a list of dfs to merge
+list_of_dfs = []
+
+# Get all of the spotify jsons from the folder 
+jsons_folder = Path(__file__).resolve().parent / "api_jsons"
+list_of_spotify_jsons = [spotify_f for spotify_f in jsons_folder.iterdir() if spotify_f.is_file() and "spotify-response.json" in spotify_f.name]
+
+# Check if the folder for artist data exists. If not create it
+aritst_folder = Path(__file__).resolve().parent / "following"
+aritst_folder.mkdir(parents=True, exist_ok=True)
+
+for spotify_jsons in list_of_spotify_jsons:
+    df_per_playlist = make_artist_csv(spotify_jsons)
+    list_of_dfs.append(df_per_playlist)
+
+full_artist_df = pd.concat(list_of_dfs)
+full_artist_df = full_artist_df.drop_duplicates(subset=["artist_id"])
+
+fdf = remove_ignored_artists(full_artist_df)
+fdf.to_csv(aritst_folder / "all_artists.csv",index=False)
