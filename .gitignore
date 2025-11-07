@@ -1,12 +1,12 @@
-music_bot.env
-ignored_artists
-false_positives
 api_jsons
-following
-time_tracker
+music_bot.env
+ignored_artists.xlsx
+all_false_positives.xlsx
+all_artists.xlsx
+missing_tracks.xlsx
+playlist_ids.xlsx
+refresh_file_releases.csv
 
 debug_log_new_releases.txt
-
-app.py
 
 dashboard.pbix

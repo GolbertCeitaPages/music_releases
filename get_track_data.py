@@ -1,6 +1,5 @@
 import requests
 import os
-import pandas as pd
 import random
 import time
 from datetime import datetime

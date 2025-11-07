@@ -20,5 +20,3 @@ create table music_db.track_data (
     preview_url varchar(150),
     `timestamp` datetime
     );
-    
-drop table music_db.track_data;

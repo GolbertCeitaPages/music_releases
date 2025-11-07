@@ -186,21 +186,21 @@ if datetime.strptime(runtime_csv["refresh_date"].max(), "%Y-%m-%d").date() < dat
     connection.commit()
     cursor.close()
     connection.close()
-
-    intents = discord.Intents.default()
-    client = discord.Client(intents=intents)
-    
-    @client.event
-    async def on_ready():
+    if DISCORD_CHANNEL_ID and DISCORD_TOKEN:
+        intents = discord.Intents.default()
+        client = discord.Client(intents=intents)
         
-        channel = client.get_channel(DISCORD_CHANNEL_ID)
+        @client.event
+        async def on_ready():
+            
+            channel = client.get_channel(DISCORD_CHANNEL_ID)
 
-        for album_info in discord_msg:
-            await channel.send(album_info)
+            for album_info in discord_msg:
+                await channel.send(album_info)
 
-        await client.close()
+            await client.close()
 
-    client.run(DISCORD_TOKEN)
+        client.run(DISCORD_TOKEN)
 
     # update the run to be the current date if there was a successful run
     subprocess.run(["python", str(Path(__file__).resolve().parent / "refresh_script_releases.py")])

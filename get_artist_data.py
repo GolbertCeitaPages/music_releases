@@ -47,12 +47,12 @@ def throttle_requests(min_delay=0.1, max_delay=0.2):
     delay = random.uniform(min_delay, max_delay)
     time.sleep(delay)
 
-artists_df = pd.read_csv(Path(__file__).resolve().parent / "following" / "all_artist_data.csv")
+artists_df = pd.read_excel(Path(__file__).resolve().parent / "following" / "all_artists.xlsx")
 
 list_of_artist_data = []
 toke = get_spotify_token()
 
-for artist_name,artist_id,following in zip(artists_df['artist'], artists_df['id'], artists_df['following']):
+for artist_name,artist_id in zip(artists_df['artist'], artists_df['artist_id']):
 
     result_json = get_spotify_artist(artist_id,toke)
     
