@@ -18,8 +18,8 @@ SPOTIFY_REFRESH_TOKEN = os.getenv("SPOTIFY_REFRESH_TOKEN")
 
 # All ids 
 id_file = pd.read_excel(Path(__file__).resolve().parent / "playlist_ids" / "playlist_ids.xlsx")
-DEEZER_ALL = id_file["playlist_id"][id_file["platform"].str.lower().str.strip() == "deezer"]
-SPOTIFY_ALL = id_file["playlist_id"][id_file["platform"].str.lower().str.strip() == "spotify"]
+DEEZER_ALL = id_file["playlist_id"][id_file["platform"].str.lower().str.strip() == "deezer"].to_list()
+SPOTIFY_ALL = id_file["playlist_id"][id_file["platform"].str.lower().str.strip() == "spotify"].to_list()
 
 jsons_folder = Path(__file__).resolve().parent / "api_jsons"
 jsons_folder.mkdir(parents=True, exist_ok=True)
