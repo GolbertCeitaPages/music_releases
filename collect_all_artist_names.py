@@ -34,9 +34,9 @@ def make_artist_csv(playlist_json_path,not_interested=[]):
 
 def remove_ignored_artists(artist_df):
     ignored_artists_df = pd.read_excel(ignored_artists_folder / "ignored_artists.xlsx")
-    ignored_artists_list = ignored_artists_df["artist"].to_list()
+    ignored_artists_list = ignored_artists_df["artist_name"].to_list()
 
-    filtered_artist_df = artist_df[~artist_df["artist"].isin(ignored_artists_list)]
+    filtered_artist_df = artist_df[~artist_df["artist_name"].isin(ignored_artists_list)]
 
     return filtered_artist_df
 

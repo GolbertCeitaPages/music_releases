@@ -27,4 +27,4 @@ Having the discord bot is not necessary as the releases get saved in the MySQL t
 Other python scripts will need the json library
 
 ## sql
-All sql tables should be executed prior to using the python scripts
+All sql tables should be executed prior to using the python scripts. Failing to do so will cause the scripts to break
