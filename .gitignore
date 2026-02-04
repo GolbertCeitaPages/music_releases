@@ -6,6 +6,7 @@ all_artists.xlsx
 missing_tracks.xlsx
 playlist_ids.xlsx
 refresh_file_releases.csv
+refresh_file_tracks.csv
 
 debug_log_new_releases.txt
 
